@@ -25,7 +25,8 @@
 
 ### Визуальные материалы
 *Скриншоты отображены ниже. Нажмите на изображение, чтобы открыть его в полном размере.*
-
+<div align = center>
 | Интерфейс приложения | Структура проекта |
 | :--- | :--- |
 | <a href="screenshots/(2)patch0.0.1.png"><img src="screenshots/(2)patch0.0.1.png" width="200" alt="Посмотреть в полном размере"></a> | <a href="screenshots/(1)patch0.0.1.png"><img src="screenshots/(1)patch0.0.1.png" width="400" alt="Посмотреть в полном размере"></a> |
+</div>
