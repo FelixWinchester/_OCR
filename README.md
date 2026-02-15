@@ -28,4 +28,4 @@
 
 | Интерфейс приложения | Структура проекта |
 | :--- | :--- |
-| <a href="img/(2)patch0.0.1.png"><img src="img/(2)patch0.0.1.png" width="180" alt="UI Screenshot"></a> | <a href="img/(1)patch0.0.1.png"><img src="img/(1)patch0.0.1.png" width="350" alt="Project Structure"></a> |
+| <a href="screenshots/(2)patch0.0.1.png"><img src="screenshots/(2)patch0.0.1.png" width="180" alt="UI Screenshot"></a> | <a href="screenshots/(1)patch0.0.1.png"><img src="screenshots/(1)patch0.0.1.png" width="350" alt="Project Structure"></a> |
