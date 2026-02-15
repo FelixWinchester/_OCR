@@ -33,12 +33,9 @@
 *Для просмотра в полном разрешении нажмите на изображение*
 
 <div align="center">
-  <img src="screenshots/(2)patch0.0.1.png" width="70%" alt="Интерфейс приложения">
+  <img src="screenshots/(2)patch0.0.1.png" width="45%">
   <br><br>
-  <img src="screenshots/(1)patch0.0.1.png" width="70%" alt="Структура проекта">
-  <br><br>
-  <b>Интерфейс приложения</b>
-  <br><br>
-  <b>Структура проекта</b>
+  <img src="screenshots/(1)patch0.0.1.png" width="45%">
 </div>
+
 
