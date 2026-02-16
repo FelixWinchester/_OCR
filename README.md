@@ -2,8 +2,8 @@
 
 > **Инструкция по сборке**
 > 1. Требуется **JDK 17** или выше.
-> 2. Клонирование репозитория: `git clone https://github.com/FelixWinchester/ваш_репозиторий.git`
-> 3. Переход в директорию: `cd ваш_репозиторий`
+> 2. Клонирование репозитория: `git clone https://github.com/FelixWinchester/https://github.com/FelixWinchester/_OCR.git`
+> 3. Переход в директорию: `cd папка с проектом`
 > 4. Сборка проекта:
 >    * **Windows:** `gradlew.bat assembleDebug`
 >    * **Linux/macOS:** `./gradlew assembleDebug`
