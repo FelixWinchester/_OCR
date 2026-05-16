@@ -14,6 +14,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Photo
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.*
@@ -23,7 +24,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -33,19 +36,17 @@ import com.example.ocrmsg.ui.components.AppLogo
 import com.example.ocrmsg.ui.components.ModelSelector
 import com.example.ocrmsg.ui.components.StatsPanel
 import com.example.ocrmsg.ui.theme.*
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.material.icons.filled.ContentCopy
-
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen(vm: MainViewModel = viewModel()) {
-    val context   = LocalContext.current
-    val state     by vm.uiState.collectAsStateWithLifecycle()
+fun MainScreen(
+    modifier: Modifier = Modifier,
+    vm: MainViewModel = viewModel()
+) {
+    val context    = LocalContext.current
+    val state      by vm.uiState.collectAsStateWithLifecycle()
     val sheetState = rememberModalBottomSheetState()
-    var showSheet by remember { mutableStateOf(false) }
+    var showSheet  by remember { mutableStateOf(false) }
 
     val galleryLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
@@ -55,6 +56,7 @@ fun MainScreen(vm: MainViewModel = viewModel()) {
             vm.setBitmap(ImageDecoder.decodeBitmap(source))
         }
     }
+
     val cameraLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.TakePicture()
     ) { success ->
@@ -63,7 +65,7 @@ fun MainScreen(vm: MainViewModel = viewModel()) {
 
     Scaffold(containerColor = BackgroundDark) { padding ->
         Column(
-            modifier = Modifier
+            modifier = modifier
                 .fillMaxSize()
                 .padding(padding)
                 .padding(horizontal = 20.dp)
@@ -71,7 +73,6 @@ fun MainScreen(vm: MainViewModel = viewModel()) {
         ) {
             Spacer(Modifier.height(20.dp))
 
-            // ── Шапка ────────────────────────────────────────────────
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -83,7 +84,6 @@ fun MainScreen(vm: MainViewModel = viewModel()) {
 
             Spacer(Modifier.height(24.dp))
 
-            // ── Зона изображения ─────────────────────────────────────
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -114,7 +114,6 @@ fun MainScreen(vm: MainViewModel = viewModel()) {
                         contentScale = ContentScale.Fit,
                         modifier = Modifier.fillMaxSize()
                     )
-                    // Кнопка удаления фото
                     IconButton(
                         onClick = { vm.clearImage() },
                         modifier = Modifier
@@ -123,14 +122,37 @@ fun MainScreen(vm: MainViewModel = viewModel()) {
                             .size(32.dp)
                             .background(BackgroundDark.copy(alpha = 0.7f), RoundedCornerShape(8.dp))
                     ) {
-                        Icon(Icons.Default.Close, contentDescription = "Удалить", tint = AccentCyan, modifier = Modifier.size(18.dp))
+                        Icon(
+                            Icons.Default.Close,
+                            contentDescription = "Удалить",
+                            tint = AccentCyan,
+                            modifier = Modifier.size(18.dp)
+                        )
                     }
                 }
             }
 
             Spacer(Modifier.height(16.dp))
 
-            // ── Результат OCR ─────────────────────────────────────────
+            OutlinedTextField(
+                value = state.groundTruth,
+                onValueChange = { vm.setGroundTruth(it) },
+                label = { Text("Эталонный текст (ground truth)", color = TextSecondary) },
+                modifier = Modifier.fillMaxWidth(),
+                minLines = 2,
+                maxLines = 4,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor   = AccentCyan,
+                    unfocusedBorderColor = SurfaceVariant,
+                    focusedTextColor     = TextPrimary,
+                    unfocusedTextColor   = TextPrimary,
+                    cursorColor          = AccentCyan
+                ),
+                shape = RoundedCornerShape(16.dp)
+            )
+
+            Spacer(Modifier.height(16.dp))
+
             if (state.ocrResult != null) {
                 val clipboardManager = LocalClipboardManager.current
                 val recognizedText = state.ocrResult!!.recognizedText.ifBlank { "(текст не найден)" }
@@ -144,7 +166,6 @@ fun MainScreen(vm: MainViewModel = viewModel()) {
                         .padding(16.dp)
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        // Заголовок + кнопка копирования
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -178,7 +199,6 @@ fun MainScreen(vm: MainViewModel = viewModel()) {
                             }
                         }
 
-                        // Текст со скроллом — максимум 160dp (~5 строк)
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -197,7 +217,6 @@ fun MainScreen(vm: MainViewModel = viewModel()) {
                 Spacer(Modifier.height(12.dp))
             }
 
-            // ── Кнопки ────────────────────────────────────────────────
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -207,21 +226,24 @@ fun MainScreen(vm: MainViewModel = viewModel()) {
                     enabled = state.bitmap != null && !state.isLoading,
                     shape = RoundedCornerShape(18.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = AccentCyan,
-                        contentColor   = BackgroundDark,
+                        containerColor         = AccentCyan,
+                        contentColor           = BackgroundDark,
                         disabledContainerColor = SurfaceVariant,
                         disabledContentColor   = TextMuted
                     ),
                     modifier = Modifier.weight(1f).height(54.dp)
                 ) {
                     if (state.isLoading) {
-                        CircularProgressIndicator(color = BackgroundDark, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                        CircularProgressIndicator(
+                            color = BackgroundDark,
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp
+                        )
                     } else {
                         Text("Распознать", fontSize = 15.sp, fontWeight = FontWeight.Bold)
                     }
                 }
 
-                // Кнопка сохранения JSON
                 if (state.ocrResult != null) {
                     IconButton(
                         onClick = { vm.saveToJson() },
@@ -235,7 +257,6 @@ fun MainScreen(vm: MainViewModel = viewModel()) {
                 }
             }
 
-            // Сообщение о сохранении / ошибке
             state.savedPath?.let {
                 Spacer(Modifier.height(8.dp))
                 Text("✓ Сохранено: $it", fontSize = 11.sp, color = StatusGreen)
@@ -247,7 +268,6 @@ fun MainScreen(vm: MainViewModel = viewModel()) {
 
             Spacer(Modifier.height(16.dp))
 
-            // ── Статистика ────────────────────────────────────────────
             StatsPanel(ocrResult = state.ocrResult, deviceStats = state.deviceStats)
 
             Spacer(Modifier.height(24.dp))
@@ -260,23 +280,31 @@ fun MainScreen(vm: MainViewModel = viewModel()) {
                 containerColor = SurfaceDark
             ) {
                 Column(
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
                         .padding(horizontal = 24.dp)
                         .padding(bottom = 32.dp)
                 ) {
-                    Text("Источник изображения", fontSize = 13.sp, color = TextSecondary, modifier = Modifier.padding(bottom = 12.dp))
+                    Text(
+                        "Источник изображения",
+                        fontSize = 13.sp,
+                        color = TextSecondary,
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    )
                     ListItem(
                         headlineContent = { Text("Галерея", color = TextPrimary) },
                         leadingContent  = { Icon(Icons.Default.Photo, null, tint = AccentCyan) },
                         colors = ListItemDefaults.colors(containerColor = SurfaceDark),
-                        modifier = Modifier.clip(RoundedCornerShape(12.dp))
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(12.dp))
                             .clickable { showSheet = false; galleryLauncher.launch("image/*") }
                     )
                     ListItem(
                         headlineContent = { Text("Камера", color = TextPrimary) },
                         leadingContent  = { Icon(Icons.Default.CameraAlt, null, tint = AccentCyan) },
                         colors = ListItemDefaults.colors(containerColor = SurfaceDark),
-                        modifier = Modifier.clip(RoundedCornerShape(12.dp))
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(12.dp))
                             .clickable {
                                 showSheet = false
                                 val uri = vm.prepareCameraUri(context)

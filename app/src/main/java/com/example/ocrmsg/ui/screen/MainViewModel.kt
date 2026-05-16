@@ -2,8 +2,12 @@ package com.example.ocrmsg.ui.screen
 
 import android.app.Application
 import android.graphics.Bitmap
+import android.graphics.ImageDecoder
+import android.content.Context
+import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.ocrmsg.data.CameraHelper
 import com.example.ocrmsg.data.DeviceStats
 import com.example.ocrmsg.data.DeviceStatsCollector
 import com.example.ocrmsg.data.OcrRepository
@@ -14,10 +18,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import android.net.Uri
-import android.content.Context
-import android.graphics.ImageDecoder
-import com.example.ocrmsg.data.CameraHelper
 
 data class MainUiState(
     val bitmap: Bitmap?           = null,
@@ -27,7 +27,8 @@ data class MainUiState(
     val selectedModel: OcrModel   = OcrModel.ML_KIT,
     val savedPath: String?        = null,
     val error: String?            = null,
-    val cameraUri: Uri?           = null
+    val cameraUri: Uri?           = null,
+    val groundTruth: String       = ""
 )
 
 class MainViewModel(app: Application) : AndroidViewModel(app) {
@@ -42,6 +43,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             savedPath = null,
             error     = null
         )
+    }
+
+    fun setGroundTruth(text: String) {
+        _uiState.value = _uiState.value.copy(groundTruth = text)
     }
 
     fun setModel(model: OcrModel) {
@@ -79,8 +84,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun recognize() {
-        val bitmap = _uiState.value.bitmap ?: return
-        val model  = _uiState.value.selectedModel
+        val bitmap  = _uiState.value.bitmap ?: return
+        val model   = _uiState.value.selectedModel
+        val context = getApplication<Application>()
 
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
@@ -88,19 +94,24 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             try {
                 val ocrResult = withContext(Dispatchers.IO) {
                     when (model) {
-                        OcrModel.ML_KIT  -> OcrRepository.runMlKit(bitmap)
-                        OcrModel.MOCK    -> OcrRepository.runMlKit(bitmap) // заглушка
-                        else             -> OcrRepository.runMlKit(bitmap)
+                        OcrModel.ML_KIT   -> OcrRepository.runMlKit(bitmap)
+                        OcrModel.TESSERACT -> OcrRepository.runTesseract(context, bitmap)
                     }
                 }
 
                 val deviceStats = withContext(Dispatchers.IO) {
-                    DeviceStatsCollector.collect(getApplication())
+                    DeviceStatsCollector.collect(context)
+                }
+
+                val finalResult = if (_uiState.value.groundTruth.isNotBlank()) {
+                    OcrRepository.applyGroundTruth(ocrResult, _uiState.value.groundTruth)
+                } else {
+                    ocrResult
                 }
 
                 _uiState.value = _uiState.value.copy(
                     isLoading   = false,
-                    ocrResult   = ocrResult,
+                    ocrResult   = finalResult,
                     deviceStats = deviceStats
                 )
             } catch (e: Exception) {
@@ -113,7 +124,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun saveToJson() {
-        val state = _uiState.value
+        val state       = _uiState.value
         val ocrResult   = state.ocrResult   ?: return
         val deviceStats = state.deviceStats ?: return
 

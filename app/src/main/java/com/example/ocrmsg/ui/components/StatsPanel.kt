@@ -29,7 +29,6 @@ fun StatsPanel(
     ) {
         // ── Бенчмарк модели ──────────────────────────────────────
         StatCard(title = "БЕНЧМАРК МОДЕЛИ") {
-            // Тайминги
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -41,7 +40,6 @@ fun StatsPanel(
 
             StatDivider()
 
-            // Текстовые метрики
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -54,7 +52,6 @@ fun StatsPanel(
 
             StatDivider()
 
-            // Уверенность + характеристики
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -62,14 +59,13 @@ fun StatsPanel(
             ) {
                 val confPct = ocrResult?.let { (it.avgConfidence * 100).toInt() }
                 val confColor = when {
-                    confPct == null     -> TextSecondary
-                    confPct >= 80       -> StatusGreen
-                    confPct >= 50       -> StatusAmber
-                    else                -> StatusRed
+                    confPct == null -> TextSecondary
+                    confPct >= 80   -> StatusGreen
+                    confPct >= 50   -> StatusAmber
+                    else            -> StatusRed
                 }
                 StatItem("Уверенность", confPct?.let { "$it%" } ?: "—", confColor)
 
-                // Флаги типов символов
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     FlagChip("Abc", ocrResult?.hasLatinChars == true)
                     FlagChip("123", ocrResult?.hasDigits == true)
@@ -79,7 +75,6 @@ fun StatsPanel(
 
             StatDivider()
 
-            // Изображение
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -93,6 +88,50 @@ fun StatsPanel(
                     ocrResult?.let { "${it.imageSizeKb} КБ" } ?: "—"
                 )
             }
+
+            // ── Метрики качества — только если введён эталон ─────
+            if (ocrResult?.cer != null) {
+                StatDivider()
+
+                Text(
+                    text = "МЕТРИКИ КАЧЕСТВА",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TextMuted,
+                    letterSpacing = 2.sp
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    val cerPct = ((ocrResult.cer) * 100).toInt()
+                    val werPct = ((ocrResult.wer ?: 0f) * 100).toInt()
+
+                    StatItem("CER",       "${cerPct}%",  metricColor(cerPct))
+                    StatItem("WER",       "${werPct}%",  metricColor(werPct))
+                    StatItem("Precision", "${((ocrResult.precision ?: 0f) * 100).toInt()}%", AccentCyan)
+                    StatItem("Recall",    "${((ocrResult.recall ?: 0f) * 100).toInt()}%",    AccentCyan)
+
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(
+                                if (ocrResult.exactMatch == true) StatusGreen.copy(alpha = 0.15f)
+                                else StatusRed.copy(alpha = 0.15f)
+                            )
+                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            text = if (ocrResult.exactMatch == true) "✓ Match" else "✗ Diff",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (ocrResult.exactMatch == true) StatusGreen else StatusRed
+                        )
+                    }
+                }
+            }
         }
 
         // ── Устройство ────────────────────────────────────────────
@@ -101,7 +140,8 @@ fun StatsPanel(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                StatItem("CPU",  deviceStats?.let { "${it.cpuLoadPct}%" } ?: "—",
+                StatItem("CPU",
+                    deviceStats?.let { "${it.cpuLoadPct}%" } ?: "—",
                     cpuColor(deviceStats?.cpuLoadPct))
                 StatItem("RAM используется",
                     deviceStats?.let { "${it.ramUsedMb} МБ" } ?: "—")
@@ -126,8 +166,11 @@ fun StatsPanel(
                     color = TextMuted
                 )
             } else {
-                Text("Запустите распознавание для сбора данных",
-                    fontSize = 11.sp, color = TextMuted)
+                Text(
+                    text = "Запустите распознавание для сбора данных",
+                    fontSize = 11.sp,
+                    color = TextMuted
+                )
             }
         }
     }
@@ -201,11 +244,17 @@ private fun FlagChip(label: String, active: Boolean) {
     }
 }
 
+private fun metricColor(pct: Int): Color = when {
+    pct <= 10 -> StatusGreen
+    pct <= 30 -> StatusAmber
+    else      -> StatusRed
+}
+
 private fun cpuColor(pct: Int?): Color = when {
-    pct == null  -> TextSecondary
-    pct >= 80    -> StatusRed
-    pct >= 50    -> StatusAmber
-    else         -> StatusGreen
+    pct == null -> TextSecondary
+    pct >= 80   -> StatusRed
+    pct >= 50   -> StatusAmber
+    else        -> StatusGreen
 }
 
 private fun tempColor(temp: Float?): Color = when {

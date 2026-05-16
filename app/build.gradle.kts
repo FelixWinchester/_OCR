@@ -72,4 +72,6 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
     debugImplementation("androidx.compose.ui:ui-tooling")
 
+    implementation("cz.adaptech.tesseract4android:tesseract4android:4.8.0")
+
 }
